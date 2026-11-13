@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MotorShield Taller - JM | Panel de Incidencias TIC</title>
+  <meta name="description" content="Panel web de gestión de incidencias informáticas del taller MotorShield, con anonimización RGPD y bloqueo de Prompt Injection." />
+  <meta name="author" content="Jorge Montalbán" />
+
+  <!-- TailwindCSS por CDN oficial (sin compiladores, listo para desplegar) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            acero:  { 900: '#0b1220', 800: '#0f172a', 700: '#1e293b' },
+            taller: { 500: '#f59e0b', 600: '#d97706' }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'Segoe UI', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', system-ui, 'Segoe UI', sans-serif; }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 9999px; }
+    .dark ::-webkit-scrollbar-thumb { background: #334155; }
+    .animar-entrada { animation: entrada 220ms ease-out both; }
+    @keyframes entrada {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .linea-cortada {
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-slate-100 text-slate-800 antialiased transition-colors duration-300 dark:bg-acero-900 dark:text-slate-100">
+
+  <!-- ===================== CABECERA ===================== -->
+  <header class="sticky top-0 z-40 border-b border-slate-200/80 bg-white/85 backdrop-blur-md dark:border-slate-800 dark:bg-acero-800/85">
+    <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+
+      <div class="flex min-w-0 flex-1 items-center gap-3">
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-acero-800 text-taller-500 shadow-lg shadow-amber-500/10 dark:bg-slate-900">
+          <!-- Icono: escudo con llave de taller -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l7 3v5.5c0 4.2-2.9 7.6-7 9.5-4.1-1.9-7-5.3-7-9.5V6l7-3z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.5 12.2l1.8 1.8 3.4-3.6" />
+          </svg>
+        </span>
+        <div class="min-w-0">
+          <h1 class="truncate text-lg font-extrabold tracking-tight sm:text-xl">
+            MotorShield <span class="font-light text-slate-500 dark:text-slate-400">Taller</span>
+            <span class="rounded-md bg-taller-500/15 px-1.5 py-0.5 text-sm font-bold text-taller-600 dark:text-taller-500">JM</span>
+          </h1>
+          <p class="truncate text-xs text-slate-500 dark:text-slate-400">Panel de incidencias TIC · Escudo RGPD activo</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="btn-tema" type="button" title="Cambiar entre modo claro y oscuro"
+                class="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-taller-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+          <svg id="icono-luna" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" />
+          </svg>
+          <svg id="icono-sol" xmlns="http://www.w3.org/2000/svg" class="hidden h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2m0 14v2M5.6 5.6l1.4 1.4m10 10l1.4 1.4M3 12h2m14 0h2M5.6 18.4l1.4-1.4m10-10L18.4 5.6M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <span class="sr-only">Cambiar tema</span>
+        </button>
+
+        <button id="btn-exportar" type="button"
+                class="hidden items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-taller-500 sm:flex dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v10m0 0l-3.5-3.5M12 14l3.5-3.5M4 17.5V19a1 1 0 001 1h14a1 1 0 001-1v-1.5" />
+          </svg>
+          Exportar informe
+        </button>
+
+        <button id="btn-nuevo" type="button"
+                class="flex items-center gap-2 rounded-lg bg-taller-500 px-3 py-2.5 text-sm font-bold text-acero-900 shadow-sm transition hover:bg-taller-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-taller-500 focus:ring-offset-2 dark:focus:ring-offset-acero-900">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14" />
+          </svg>
+          Nuevo ticket
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+
+    <!-- ===================== KPIs ===================== -->
+    <section aria-label="Resumen de incidencias" class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-acero-800">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Total tickets</p>
+        <p id="kpi-total" class="mt-2 text-3xl font-extrabold tabular-nums">0</p>
+        <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">Recibidos y clasificados</p>
+      </article>
+
+      <article class="rounded-2xl border border-red-200 bg-red-50 p-4 shadow-sm transition hover:shadow-md dark:border-red-900/60 dark:bg-red-950/30">
+        <p class="text-xs font-semibold uppercase tracking-wide text-red-700 dark:text-red-300">Pendientes ALTA</p>
+        <p id="kpi-altas" class="mt-2 text-3xl font-extrabold tabular-nums text-red-600 dark:text-red-400">0</p>
+        <p class="mt-1 text-xs text-red-500/80 dark:text-red-400/70">Requieren acción inmediata</p>
+      </article>
+
+      <article class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm transition hover:shadow-md dark:border-emerald-900/60 dark:bg-emerald-950/30">
+        <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">PII interceptados</p>
+        <p id="kpi-pii" class="mt-2 text-3xl font-extrabold tabular-nums text-emerald-600 dark:text-emerald-400">0</p>
+        <p class="mt-1 text-xs text-emerald-600/80 dark:text-emerald-400/70">Datos privados protegidos</p>
+      </article>
+
+      <article class="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm transition hover:shadow-md dark:border-amber-900/60 dark:bg-amber-950/30">
+        <p class="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">Ataques / rechazos</p>
+        <p id="kpi-bloqueos" class="mt-2 text-3xl font-extrabold tabular-nums text-amber-600 dark:text-amber-400">0</p>
+        <p class="mt-1 text-xs text-amber-600/80 dark:text-amber-400/70">Bloqueados por el Root Prompt</p>
+      </article>
+    </section>
+
+    <!-- ===================== FILTROS ===================== -->
+    <section aria-label="Filtros y búsqueda" class="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-acero-800">
+      <div class="flex flex-wrap items-center gap-2" id="filtros-categoria">
+        <button type="button" data-categoria="TODAS" class="filtro-chip rounded-full px-3 py-1.5 text-xs font-bold transition">TODAS</button>
+        <button type="button" data-categoria="REDES" class="filtro-chip rounded-full px-3 py-1.5 text-xs font-bold transition">REDES</button>
+        <button type="button" data-categoria="HARDWARE" class="filtro-chip rounded-full px-3 py-1.5 text-xs font-bold transition">HARDWARE</button>
+        <button type="button" data-categoria="SOFTWARE" class="filtro-chip rounded-full px-3 py-1.5 text-xs font-bold transition">SOFTWARE</button>
+        <button type="button" data-categoria="FACTURACION" class="filtro-chip rounded-full px-3 py-1.5 text-xs font-bold transition">FACTURACIÓN</button>
+        <button type="button" data-categoria="SEGURIDAD" class="filtro-chip rounded-full px-3 py-1.5 text-xs font-bold transition">SEGURIDAD</button>
+        <button type="button" data-categoria="OTROS" class="filtro-chip rounded-full px-3 py-1.5 text-xs font-bold transition">OTROS</button>
+      </div>
+
+      <div class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <label class="relative sm:col-span-2">
+          <span class="sr-only">Buscar en los tickets</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+          </svg>
+          <input id="buscador" type="search" placeholder="Buscar por texto, autor o ubicación…" autocomplete="off"
+                 class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-taller-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-taller-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus:bg-slate-900" />
+        </label>
+
+        <label>
+          <span class="sr-only">Filtrar por prioridad</span>
+          <select id="filtro-prioridad" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 focus:border-taller-500 focus:outline-none focus:ring-2 focus:ring-taller-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+            <option value="TODAS">Todas las prioridades</option>
+            <option value="ALTA">Prioridad ALTA</option>
+            <option value="MEDIA">Prioridad MEDIA</option>
+            <option value="BAJA">Prioridad BAJA</option>
+          </select>
+        </label>
+
+        <div class="flex gap-2">
+          <label class="flex-1">
+            <span class="sr-only">Filtrar por estado</span>
+            <select id="filtro-estado" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 focus:border-taller-500 focus:outline-none focus:ring-2 focus:ring-taller-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+              <option value="TODOS">Todos los estados</option>
+              <option value="PENDIENTE">Pendientes</option>
+              <option value="RESUELTO">Resueltos</option>
+              <option value="BLOQUEADO_PROMPT_INJECTION">Bloqueados</option>
+              <option value="RECHAZADO_FUERA_DE_TEMA">Rechazados</option>
+            </select>
+          </label>
+          <button id="btn-limpiar" type="button" title="Limpiar filtros"
+                  class="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-taller-500 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-700">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v6h6M20 20v-6h-6M20 9a8 8 0 00-14.2-2.2M4 15a8 8 0 0014.2 2.2" />
+            </svg>
+            <span class="sr-only">Limpiar filtros</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== LISTADO ===================== -->
+    <section aria-label="Listado de tickets" class="mt-6">
+      <div class="mb-3 flex items-baseline justify-between gap-3">
+        <h2 class="text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Incidencias</h2>
+        <p id="contador-resultados" class="text-xs text-slate-500 dark:text-slate-400"></p>
+      </div>
+
+      <div id="lista-tickets" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3" role="list"></div>
+
+      <div id="estado-vacio" class="hidden rounded-2xl border border-dashed border-slate-300 bg-white/60 p-10 text-center dark:border-slate-700 dark:bg-acero-800/40">
+        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-10 w-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.5 9.5h5m-5 4h3M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p class="mt-3 font-semibold text-slate-600 dark:text-slate-300">No hay tickets que coincidan con los filtros</p>
+        <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Prueba con otra categoría o limpia la búsqueda.</p>
+        <button id="btn-vacio-limpiar" type="button" class="mt-4 rounded-lg bg-taller-500 px-4 py-2 text-sm font-bold text-acero-900 transition hover:bg-taller-600 hover:text-white">
+          Limpiar filtros
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================== PIE ===================== -->
+  <footer class="mt-10 border-t border-slate-200 bg-white py-6 dark:border-slate-800 dark:bg-acero-800">
+    <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 text-center text-xs text-slate-500 sm:flex-row sm:text-left dark:text-slate-400">
+      <p><strong class="text-slate-700 dark:text-slate-200">MotorShield Taller - JM</strong> · Jorge Montalbán · 2º DAW</p>
+      <p>Datos anonimizados conforme al RGPD · Ningún dato personal sale del navegador.</p>
+    </div>
+  </footer>
+
+  <!-- ===================== MODAL NUEVO TICKET ===================== -->
+  <div id="modal-ticket" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+    <div role="dialog" aria-modal="true" aria-labelledby="titulo-modal"
+         class="animar-entrada max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-acero-800">
+
+      <div class="sticky top-0 flex items-start justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4 dark:border-slate-700 dark:bg-acero-800">
+        <div>
+          <h2 id="titulo-modal" class="text-lg font-extrabold">Nuevo ticket de incidencia</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">El escudo RGPD censura los datos sensibles mientras escribes.</p>
+        </div>
+        <button id="btn-cerrar-modal" type="button" class="grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700">
+          <span class="sr-only">Cerrar</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+
+      <form id="form-ticket" novalidate class="space-y-4 px-5 py-4">
+        <div class="grid gap-3 sm:grid-cols-2">
+          <label class="block">
+            <span class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">Solicitante</span>
+            <input id="campo-autor" type="text" required maxlength="60" placeholder="Nombre y apellidos"
+                   class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-taller-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-taller-500/30 dark:border-slate-700 dark:bg-slate-900" />
+          </label>
+          <label class="block">
+            <span class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">Ubicación o equipo</span>
+            <input id="campo-ubicacion" type="text" maxlength="80" placeholder="Recepción, elevador 3…"
+                   class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-taller-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-taller-500/30 dark:border-slate-700 dark:bg-slate-900" />
+          </label>
+          <label class="block">
+            <span class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">Categoría</span>
+            <select id="campo-categoria" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-taller-500 focus:outline-none focus:ring-2 focus:ring-taller-500/30 dark:border-slate-700 dark:bg-slate-900">
+              <option value="REDES">REDES</option>
+              <option value="HARDWARE">HARDWARE</option>
+              <option value="SOFTWARE">SOFTWARE</option>
+              <option value="FACTURACION">FACTURACIÓN</option>
+              <option value="SEGURIDAD">SEGURIDAD</option>
+              <option value="OTROS">OTROS</option>
+            </select>
+          </label>
+          <label class="block">
+            <span class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">Prioridad</span>
+            <select id="campo-prioridad" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-taller-500 focus:outline-none focus:ring-2 focus:ring-taller-500/30 dark:border-slate-700 dark:bg-slate-900">
+              <option value="ALTA">ALTA</option>
+              <option value="MEDIA" selected>MEDIA</option>
+              <option value="BAJA">BAJA</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="block">
+          <span class="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">Descripción de la incidencia</span>
+          <textarea id="campo-mensaje" rows="4" required maxlength="1200"
+                    placeholder="Describe el problema. Puedes probar a escribir un DNI, una IP o una contraseña: se censurarán solos."
+                    class="w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-taller-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-taller-500/30 dark:border-slate-700 dark:bg-slate-900"></textarea>
+        </label>
+
+        <!-- Vista previa protegida RGPD -->
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 dark:border-emerald-900/60 dark:bg-emerald-950/30">
+          <div class="mb-1 flex items-center justify-between gap-2">
+            <p class="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l7 3v5.5c0 4.2-2.9 7.6-7 9.5-4.1-1.9-7-5.3-7-9.5V6l7-3z" />
+              </svg>
+              Vista previa protegida RGPD
+            </p>
+            <span id="contador-pii" class="rounded-full bg-emerald-600/10 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300">0 datos censurados</span>
+          </div>
+          <p id="vista-previa-texto" class="min-h-[2.5rem] whitespace-pre-wrap break-words text-sm text-emerald-900/80 dark:text-emerald-100/80">
+            Aquí verás tu texto con los datos privados ya ocultos.
+          </p>
+        </div>
+
+        <!-- Alerta de Prompt Injection -->
+        <div id="alerta-inyeccion" class="hidden rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300" role="alert">
+          <p class="font-bold">⚠️ Posible Prompt Injection detectada</p>
+          <p class="mt-0.5 text-xs">El texto contiene una frase que intenta manipular al sistema. Elimínala para poder guardar el ticket.</p>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 pt-3 dark:border-slate-700">
+          <button id="btn-cancelar" type="button" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700">
+            Cancelar
+          </button>
+          <button id="btn-guardar" type="submit" class="rounded-lg bg-taller-500 px-5 py-2 text-sm font-bold text-acero-900 transition hover:bg-taller-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-taller-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-acero-800">
+            Guardar ticket
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Avisos flotantes -->
+  <div id="contenedor-toasts" class="pointer-events-none fixed bottom-4 right-4 z-[60] flex w-[min(92vw,22rem)] flex-col gap-2" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
